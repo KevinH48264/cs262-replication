@@ -42,7 +42,7 @@ def run():
             if (message and message.response):
                 print(message.response)
 
-            # TODO: uncomment this for MAC
+            # TODO: uncomment this for Mac
             # listen to the socket or stdin for keyboard inputs.
             # ready, _, _ = select.select([sys.stdin.fileno()], [], [], 0.1)
 

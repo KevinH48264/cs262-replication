@@ -24,7 +24,6 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
         # this is the object that stores { username : [] (list of messages) } as a key : value dictionary that runs when the server starts, this tracks any messages in queue to be delivered to the user from other users
         self.queues = {}
 
-
         self.port = port
         self.primary = False
         self.other_servers = []
@@ -32,7 +31,7 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
             if i != int(port):
                 self.other_servers.append(i)
 
-        # TODO: check heartbeats of other servers to see if they are alive. If not, then set self.primary to True
+        # Check heartbeats of other servers to see if they are alive. If not, then set self.primary to True
         heartbeat_thread = threading.Thread(target=self.send_heartbeat)
         heartbeat_thread.daemon = True
         heartbeat_thread.start()
@@ -45,7 +44,9 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
         # Load accounts data from accounts.csv
         with open(f'accounts-{port}.csv', mode='r') as infile:
             reader = csv.reader(infile)
-            self.accounts = {rows[0]: rows[1] for rows in reader}
+            for rows in reader:
+                if len(rows) == 2:
+                    self.accounts[rows[0]] = rows[1]
 
         # Check if queues.csv exists, if not, create it
         if not os.path.exists(f'queues-{port}.csv'):
@@ -55,13 +56,18 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
         # Load message queues data from queues.csv, format of messages will be separated by |
         with open(f'queues-{port}.csv', mode='r') as infile:
             reader = csv.reader(infile)
-            self.queues = {rows[0]: rows[1].split('|') for rows in reader}
+            for rows in reader:
+                if len(rows) == 2:
+                    self.queues[rows[0]] = rows[1].split('|')
 
         print("Accounts: ", self.accounts)
         print("Queues: ", self.queues)
 
     # create the username and store their connection if the username is unique
     def CreateAccount(self, request, context):
+        global ports_alive
+        global ports
+
         print("create account!")
 
         username = request.request[15:].strip("\n")
@@ -73,23 +79,29 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
 
             # commiting log
             print("committing!")
-            save_accounts(self.accounts)
-            save_queues(self.queues)
+            save_accounts(self.accounts, self.port)
+            save_queues(self.queues, self.port)
 
             # send to replicas before responding to client
-            print("send to replicas!")
-            replicas = []
-            for i in ports:
-                if i != self.port:
-                    replicas.append(i)
-            for replica in replicas:
-                channel = grpc.insecure_channel(ip + ":" + str(replica))
-                stub = chat_pb2_grpc.ReplicationServiceStub(channel)
-                account_update = chat_pb2.AccountUpdate(username=username, connection=context.peer())
-                stub.UpdateAccount(account_update)
-                queue_update = chat_pb2.QueueUpdate(username=username, messages=[])
-                stub.UpdateQueue(queue_update)
+            if self.primary:
+                print("send to replicas!")
+                for replica in self.other_servers:
+                    print("ports_alive[ports.index(replica)]", ports_alive[ports.index(replica)])
+                    if ports_alive[ports.index(replica)]:
+                        print("replica", replica)
+                        channel = grpc.insecure_channel(ip + ":" + str(replica))
+                        print("a")
+                        stub = chat_pb2_grpc.ReplicationServiceStub(channel)
+                        print('b')
+                        account_update = chat_pb2.AccountUpdate(username=username, connection=context.peer())
+                        print('c')
+                        stub.UpdateAccount(account_update)
+                        print("d")
+                        queue_update = chat_pb2.QueueUpdate(username=username, messages=[])
+                        stub.UpdateQueue(queue_update)
+                        print("Sent to replica on port ", replica)
 
+            print("User {} created!".format(username))
             return chat_pb2.Response(response="Account {} created!".format(username)) 
 
     # log username in and update active connection if the username exists
@@ -125,6 +137,8 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
 
     # return all accounts that fulfill regex matching
     def ShowAccounts(self, request, context):
+        print("showing accounts!")
+
         # Parsing command line input from client
         search_input = request.request[14:].strip("\n")
 
@@ -137,6 +151,8 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
         final_accounts = ""
         for i in range(len(matches)):
             final_accounts += matches[i] + "\n"
+
+        print("final accounts: ", final_accounts)
         return chat_pb2.Response(response=final_accounts)
 
     # delete all information related to the username from accounts and queues dictionary
@@ -188,7 +204,7 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
         global ip
 
         while True:
-            print("send_heartbeat status", ports_alive)
+            print("- send_heartbeat status, ports_alive", ports_alive)
             time.sleep(interval)
             for backup_server in self.other_servers:
                 channel = grpc.insecure_channel(ip + ":" + str(backup_server))
@@ -197,12 +213,12 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
                 try:
                     # if the heartbeat is successful, the server is alive
                     response = stub.SendHeartbeat(chat_pb2.Request(request="temp"))
-                    print(f"Heartbeat received from {backup_server}: {response.response}")
+                    print(f"- Heartbeat received from {backup_server}: {response.response}")
                     ports_alive[ports.index(backup_server)] = True
 
                 except grpc.RpcError as e:
                     # else the heartbeat was not successful, the server is dead, run leader election
-                    print(f"Failed to send heartbeat to {backup_server}")
+                    print(f"- Failed to send heartbeat to {backup_server}")
 
                     # only run leader election if the server is not already dead
                     if ports_alive[ports.index(backup_server)]:
@@ -211,40 +227,41 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
     
     # Leader election
     def leader_election(self):
-        print("running leader election")
+        print("- running leader election")
 
         # the lowest alive port number is the primary server
         if ports.index(int(self.port)) == ports_alive.index(True):
-            print("I am the primary server")
+            print("- I am the primary server")
             self.primary = True
         else:
-            print("I am not the primary server")
+            print("- I am not the primary server")
 
         return
 
 
 # ReplicationServicer class for receiving updates from primary as replica
 class ReplicationServicer(chat_pb2_grpc.ReplicationServiceServicer):
-    def __init__(self, chat_servicer):
+    def __init__(self, chat_servicer, port):
         self.chat_servicer = chat_servicer
+        self.port = port
 
     def UpdateAccount(self, request, context):
         self.chat_servicer.accounts[request.username] = request.connection
-        save_accounts(self.chat_servicer.accounts)
+        save_accounts(self.chat_servicer.accounts, self.port)
         return chat_pb2.Response(response="Account updated")
 
     def UpdateQueue(self, request, context):
         self.chat_servicer.queues[request.username] = request.messages
-        save_queues(self.chat_servicer.queues)
+        save_queues(self.chat_servicer.queues, self.port)
         return chat_pb2.Response(response="Queue updated")
 
 
 # helper functions for both ChatServicer and ReplicationServicer
 def save_accounts(accounts, port):
-        with open(f'accounts-{port}.csv', mode='w') as outfile:
-            writer = csv.writer(outfile)
-            for key, value in accounts.items():
-                writer.writerow([key, value])
+    with open(f'accounts-{port}.csv', mode='w') as outfile:
+        writer = csv.writer(outfile)
+        for key, value in accounts.items():
+            writer.writerow([key, value])
 
 def save_queues( queues, port):
     with open(f'queues-{port}.csv', mode='w') as outfile:
@@ -262,7 +279,7 @@ def run_server(port=8080):
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     chat_servicer = ChatServicer(port)
     chat_pb2_grpc.add_ChatServiceServicer_to_server(chat_servicer, server)
-    chat_pb2_grpc.add_ReplicationServiceServicer_to_server(ReplicationServicer(chat_servicer), server)
+    chat_pb2_grpc.add_ReplicationServiceServicer_to_server(ReplicationServicer(chat_servicer, port), server)
     server.add_insecure_port(ip + ":" + port)
     server.start()
     
