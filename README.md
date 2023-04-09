@@ -1,5 +1,15 @@
 Specifications and Design notebook: https://docs.google.com/document/d/1O02g64RKuSJvuYscbTvHQCIFWnbLA0n8cMBo4fyD09Y/edit?usp=sharing
 
+# How to use
+```bash
+Run “python server.py 8080”
+Run “python server.py 8081”
+Run “python server.py 8082”
+Run “python client.py”
+```
+Then, start running commands on client.py, and to prove 2-fault tolerance, just Ctrl+C out of the 8080 server! 
+To check for persistence, just check the csv files for each server!
+
 # Setup Instructions:
 
 ## Part 1:
