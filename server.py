@@ -88,18 +88,12 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
                 for replica in self.other_servers:
                     print("ports_alive[ports.index(replica)]", ports_alive[ports.index(replica)])
                     if ports_alive[ports.index(replica)]:
-                        print("replica", replica)
                         channel = grpc.insecure_channel(ip + ":" + str(replica))
-                        print("a")
                         stub = chat_pb2_grpc.ReplicationServiceStub(channel)
-                        print('b')
                         account_update = chat_pb2.AccountUpdate(username=username, connection=context.peer())
-                        print('c')
                         stub.UpdateAccount(account_update)
-                        print("d")
                         queue_update = chat_pb2.QueueUpdate(username=username, messages=[])
                         stub.UpdateQueue(queue_update)
-                        print("Sent to replica on port ", replica)
 
             print("User {} created!".format(username))
             return chat_pb2.Response(response="Account {} created!".format(username)) 
