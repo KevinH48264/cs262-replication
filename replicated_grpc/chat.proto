@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+service ChatService {
+    rpc CreateAccount(Request) returns (Response) {}
+    rpc LogIn(Request) returns (Response) {}
+    rpc SendMessage(Request) returns (Response) {}
+    rpc ShowAccounts(Request) returns (Response) {}
+    rpc DeleteAccount(Request) returns (Response) {}
+    rpc ReceiveMessage(Request) returns (Response) {}
+    rpc LogOut(Request) returns (Response) {}
+    rpc SendHeartbeat (Request) returns (Response) {}
+}
+
+message Request {
+    string request = 1;
+}
+
+message Response {
+    string response = 1;
+}
+
+
+service ReplicationService {
+    rpc UpdateAccount (AccountUpdate) returns (Response) {}
+    rpc UpdateQueue (QueueUpdate) returns (Response) {}
+}
+
+message AccountUpdate {
+    string username = 1;
+    string connection = 2;
+}
+
+message QueueUpdate {
+    string username = 1;
+    repeated string messages = 2;
+}
