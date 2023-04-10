@@ -161,12 +161,14 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
 
         # recipient is online and message will be sent immediately
         else:
+            print("Sender: ", context.peer())
+            print("Recipient: ", self.accounts[recipient])
+
             sender = list(self.accounts.keys())[list(self.accounts.values()).index(context.peer())]
-            self.queues[recipient].append(sender + " sent you a message: " + message)          
+            self.queues[recipient].append(sender + " sent you a message: " + message) 
 
             # commiting log
             print("committing!")
-            save_accounts(self.accounts, self.port)
             save_queues(self.queues, self.port)
 
             # send to replicas before responding to client
