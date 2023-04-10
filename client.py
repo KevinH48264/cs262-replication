@@ -40,9 +40,12 @@ def run():
         print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n")
 
         while True:
-            message = stub.ReceiveMessage(chat_pb2.Request(request="temp"))
-            if (message and message.response):
-                print(message.response)
+            try:
+                message = stub.ReceiveMessage(chat_pb2.Request(request="temp"))
+                if (message and message.response):
+                    print(message.response)
+            except Exception:
+                break
 
             # TODO: uncomment this for Mac
             # listen to the socket or stdin for keyboard inputs.
@@ -61,21 +64,39 @@ def run():
                     # if there is a command prompt, send it and wait for a server response before printing it and continuing
                     if len(str.encode(cmd)) > 0:
                         if 'create_account' in cmd:
-                            res = create_account(stub, cmd).response
+                            try:
+                                res = create_account(stub, cmd).response
+                            except Exception:
+                                break
                         elif 'log_in' in cmd:
-                            res = login(stub, cmd).response
+                            try:
+                                res = login(stub, cmd).response
+                            except Exception:
+                                break                            
                         elif 'show_accounts' in cmd:
-                            res = show_accounts(stub, cmd).response
+                            try:
+                                res = show_accounts(stub, cmd).response
+                            except Exception:
+                                break       
                         elif 'send_message_to' in cmd:
-                            res = send_message_to(stub, cmd).response
-                        elif 'delete_account' in cmd:
-                            res = delete_account(stub, cmd).response
-                        elif 'quit' in cmd:
-                            res = quit(stub, cmd).response
-                    print(res)
+                            try:
+                                res = send_message_to(stub, cmd).response
+                            except Exception:
+                                break  
 
-def run1():
-    # TODO: handle trying port 1, then port 2, then port 3. If all fail, then exit the program.
+                        elif 'delete_account' in cmd:
+                            try:
+                                res = delete_account(stub, cmd).response
+                            except Exception:
+                                break  
+
+                        elif 'quit' in cmd:
+                            try:
+                                res = quit(stub, cmd).response
+                            except Exception:
+                                break  
+
+                    print(res)
 
     # connect to server host and port
     with grpc.insecure_channel(('{}:{}').format(server_ip_address, port2)) as channel:
@@ -84,9 +105,12 @@ def run1():
         print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n")
 
         while True:
-            message = stub.ReceiveMessage(chat_pb2.Request(request="temp"))
-            if (message and message.response):
-                print(message.response)
+            try:
+                message = stub.ReceiveMessage(chat_pb2.Request(request="temp"))
+                if (message and message.response):
+                    print(message.response)
+            except Exception:
+                break
 
             # TODO: uncomment this for Mac
             # listen to the socket or stdin for keyboard inputs.
@@ -105,21 +129,38 @@ def run1():
                     # if there is a command prompt, send it and wait for a server response before printing it and continuing
                     if len(str.encode(cmd)) > 0:
                         if 'create_account' in cmd:
-                            res = create_account(stub, cmd).response
+                            try:
+                                res = create_account(stub, cmd).response
+                            except Exception:
+                                break
                         elif 'log_in' in cmd:
-                            res = login(stub, cmd).response
+                            try:
+                                res = login(stub, cmd).response
+                            except Exception:
+                                break                            
                         elif 'show_accounts' in cmd:
-                            res = show_accounts(stub, cmd).response
+                            try:
+                                res = show_accounts(stub, cmd).response
+                            except Exception:
+                                break       
                         elif 'send_message_to' in cmd:
-                            res = send_message_to(stub, cmd).response
-                        elif 'delete_account' in cmd:
-                            res = delete_account(stub, cmd).response
-                        elif 'quit' in cmd:
-                            res = quit(stub, cmd).response
-                    print(res)
+                            try:
+                                res = send_message_to(stub, cmd).response
+                            except Exception:
+                                break  
 
-def run2():
-    # TODO: handle trying port 1, then port 2, then port 3. If all fail, then exit the program.
+                        elif 'delete_account' in cmd:
+                            try:
+                                res = delete_account(stub, cmd).response
+                            except Exception:
+                                break  
+
+                        elif 'quit' in cmd:
+                            try:
+                                res = quit(stub, cmd).response
+                            except Exception:
+                                break  
+                    print(res)
 
     # connect to server host and port
     with grpc.insecure_channel(('{}:{}').format(server_ip_address, port3)) as channel:
@@ -128,9 +169,12 @@ def run2():
         print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n")
 
         while True:
-            message = stub.ReceiveMessage(chat_pb2.Request(request="temp"))
-            if (message and message.response):
-                print(message.response)
+            try:
+                message = stub.ReceiveMessage(chat_pb2.Request(request="temp"))
+                if (message and message.response):
+                    print(message.response)
+            except Exception:
+                break
 
             # TODO: uncomment this for Mac
             # listen to the socket or stdin for keyboard inputs.
@@ -163,6 +207,4 @@ def run2():
                     print(res)
 
 if __name__ == '__main__':
-    run()
-    run1()
-    run2()
+    run()  
