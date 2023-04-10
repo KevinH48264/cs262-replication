@@ -5,7 +5,9 @@ import chat_pb2_grpc
 import sys
 
 # insert the server computer's IP address and port here
-server_ip_address = '10.250.73.252'
+#server_ip_address = '10.250.73.252'
+server_ip_address = "10.250.72.38"
+
 port1 = 8080
 port2 = 8081
 port3 = 8082

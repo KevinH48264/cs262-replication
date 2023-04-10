@@ -11,7 +11,8 @@ import threading
 import time
 
 # insert the server computer's IP address and port here. Ports reflect the 3 servers that are running for the backend. Lowest number will be the primary in case of leader election.
-ip = "10.250.73.252"
+#ip = "10.250.73.252"
+ip = "10.250.72.38"
 ports = [8080, 8081, 8082]
 ports_alive = [True, True, True]
 
@@ -103,6 +104,25 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
         username = request.request[7:].strip("\n")
         if username in list(self.accounts.keys()):
             self.accounts[username] = context.peer()
+
+            # commiting log
+            print("committing!")
+            save_accounts(self.accounts, self.port)
+            save_queues(self.queues, self.port)
+
+            # send to replicas before responding to client
+            if self.primary:
+                print("send to replicas!")
+                for replica in self.other_servers:
+                    print("ports_alive[ports.index(replica)]", ports_alive[ports.index(replica)])
+                    if ports_alive[ports.index(replica)]:
+                        channel = grpc.insecure_channel(ip + ":" + str(replica))
+                        stub = chat_pb2_grpc.ReplicationServiceStub(channel)
+                        account_update = chat_pb2.AccountUpdate(username=username, connection=context.peer())
+                        stub.UpdateAccount(account_update)
+                        queue_update = chat_pb2.QueueUpdate(username=username, messages=self.queues[username])
+                        stub.UpdateQueue(queue_update)
+
             print("User {} logged in!".format(username))
             return chat_pb2.Response(response="{} is successfully logged in!".format(username))
         else:
@@ -121,12 +141,44 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
             # recipient is offline and message should be stored in queue
             sender = list(self.accounts.keys())[list(self.accounts.values()).index(context.peer())]
             self.queues[recipient].append(sender + " sent you a message: " + message)
+
+            # commiting log
+            print("committing!")
+            save_queues(self.queues, self.port)
+
+            # send to replicas before responding to client
+            if self.primary:
+                print("send to replicas!")
+                for replica in self.other_servers:
+                    print("ports_alive[ports.index(replica)]", ports_alive[ports.index(replica)])
+                    if ports_alive[ports.index(replica)]:
+                        channel = grpc.insecure_channel(ip + ":" + str(replica))
+                        stub = chat_pb2_grpc.ReplicationServiceStub(channel)
+                        queue_update = chat_pb2.QueueUpdate(username=recipient, messages=self.queues[recipient])
+                        stub.UpdateQueue(queue_update)
+
             return chat_pb2.Response(response="message will be sent to {} when they log in".format(recipient))
 
         # recipient is online and message will be sent immediately
         else:
             sender = list(self.accounts.keys())[list(self.accounts.values()).index(context.peer())]
-            self.queues[recipient].append(sender + " sent you a message: " + message)            
+            self.queues[recipient].append(sender + " sent you a message: " + message)          
+
+            # commiting log
+            print("committing!")
+            save_queues(self.queues, self.port)
+
+            # send to replicas before responding to client
+            if self.primary:
+                print("send to replicas!")
+                for replica in self.other_servers:
+                    print("ports_alive[ports.index(replica)]", ports_alive[ports.index(replica)])
+                    if ports_alive[ports.index(replica)]:
+                        channel = grpc.insecure_channel(ip + ":" + str(replica))
+                        stub = chat_pb2_grpc.ReplicationServiceStub(channel)
+                        queue_update = chat_pb2.QueueUpdate(username=recipient, messages=self.queues[username])
+                        stub.UpdateQueue(queue_update)
+
             return chat_pb2.Response(response="message successfully sent to {}".format(recipient))
 
     # return all accounts that fulfill regex matching
@@ -147,6 +199,7 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
             final_accounts += matches[i] + "\n"
 
         print("final accounts: ", final_accounts)
+
         return chat_pb2.Response(response=final_accounts)
 
     # delete all information related to the username from accounts and queues dictionary
@@ -159,6 +212,25 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
 
         self.accounts.pop(account_to_be_deleted)
         self.queues.pop(account_to_be_deleted)
+
+        # commiting log
+        print("committing!")
+        save_accounts(self.accounts, self.port)
+        save_queues(self.queues, self.port)
+
+        # send to replicas before responding to client
+        if self.primary:
+            print("send to replicas!")
+            for replica in self.other_servers:
+                print("ports_alive[ports.index(replica)]", ports_alive[ports.index(replica)])
+                if ports_alive[ports.index(replica)]:
+                    channel = grpc.insecure_channel(ip + ":" + str(replica))
+                    stub = chat_pb2_grpc.ReplicationServiceStub(channel)
+                    account_update = chat_pb2.AccountUpdate(username=username, connection=None)
+                    stub.DeleteAccount(account_update)
+                    queue_update = chat_pb2.QueueUpdate(username=username, messages=[])
+                    stub.DeleteQueue(queue_update)
+
         return chat_pb2.Response(response="The account {} has been successfully deleted.".format(account_to_be_deleted))
 
     # The client [USERNAME] uses this function to constantly query the server for whether it has received any messages, by sending and emptying queues[USERNAME]
@@ -175,6 +247,25 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
 
             # Empty the queue after all messages have been sent
             self.queues[receiving_user] = []
+
+            # commiting log
+            print("committing!")
+            save_accounts(self.accounts, self.port)
+            save_queues(self.queues, self.port)
+
+            # send to replicas before responding to client
+            if self.primary:
+                print("send to replicas!")
+                for replica in self.other_servers:
+                    print("ports_alive[ports.index(replica)]", ports_alive[ports.index(replica)])
+                    if ports_alive[ports.index(replica)]:
+                        channel = grpc.insecure_channel(ip + ":" + str(replica))
+                        stub = chat_pb2_grpc.ReplicationServiceStub(channel)
+                        account_update = chat_pb2.AccountUpdate(username=receiving_user, connection=context.peer())
+                        stub.UpdateAccount(account_update)
+                        queue_update = chat_pb2.QueueUpdate(username=receiving_user, messages=self.queues[receiving_user])
+                        stub.UpdateQueue(queue_update)
+
             return chat_pb2.Response(response=final_messages)
 
         else:
@@ -187,6 +278,25 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
         print("account values: ", list(self.accounts.values()))
         username = list(self.accounts.keys())[list(self.accounts.values()).index(context.peer())]
         self.accounts[username] = None
+
+        # commiting log
+        print("committing!")
+        save_accounts(self.accounts, self.port)
+        save_queues(self.queues, self.port)
+
+        # send to replicas before responding to client
+        if self.primary:
+            print("send to replicas!")
+            for replica in self.other_servers:
+                print("ports_alive[ports.index(replica)]", ports_alive[ports.index(replica)])
+                if ports_alive[ports.index(replica)]:
+                    channel = grpc.insecure_channel(ip + ":" + str(replica))
+                    stub = chat_pb2_grpc.ReplicationServiceStub(channel)
+                    account_update = chat_pb2.AccountUpdate(username=receiving_user, connection=None)
+                    stub.UpdateAccount(account_update)
+                    queue_update = chat_pb2.QueueUpdate(username=receiving_user, messages=self.queues[receiving_user])
+                    stub.UpdateQueue(queue_update)
+
         return chat_pb2.Response(response="successfully quit / logged off")
     
     # A function that allows for other servers to check if this server is still alive
@@ -249,6 +359,15 @@ class ReplicationServicer(chat_pb2_grpc.ReplicationServiceServicer):
         save_queues(self.chat_servicer.queues, self.port)
         return chat_pb2.Response(response="Queue updated")
 
+    def DeleteAccount(self, request, context):
+        self.chat_servicer.accounts.pop(request.username)
+        save_accounts(self.chat_servicer.accounts, self.port)
+        return chat_pb2.Response(response="Account updated")
+
+    def DeleteQueue(self, request, context):
+        self.chat_servicer.queues.pop(request.username) 
+        save_queues(self.chat_servicer.queues, self.port)
+        return chat_pb2.Response(response="Queue updated")
 
 # helper functions for both ChatServicer and ReplicationServicer
 def save_accounts(accounts, port):
