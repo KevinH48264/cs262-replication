@@ -119,7 +119,7 @@ def run():
         elif 'quit' in cmd:
             res = quit(stub1, cmd).response
 
-        print(res)
+        #print(res)
 
 
         while True:
@@ -201,7 +201,7 @@ def run():
         elif 'quit' in cmd:
             res = quit(stub2, cmd).response
 
-        print(res)
+        #print(res)
 
 
         while True:
