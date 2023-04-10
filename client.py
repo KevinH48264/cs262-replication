@@ -37,7 +37,7 @@ def run():
     with grpc.insecure_channel(('{}:{}').format(server_ip_address, port1)) as channel:
         stub = chat_pb2_grpc.ChatServiceStub(channel)
 
-        print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n")
+        print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER AT PORT {}! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n".format(port1))
 
         while True:
             try:
@@ -100,13 +100,31 @@ def run():
 
     # connect to server host and port
     with grpc.insecure_channel(('{}:{}').format(server_ip_address, port2)) as channel:
-        stub = chat_pb2_grpc.ChatServiceStub(channel)
+        stub1 = chat_pb2_grpc.ChatServiceStub(channel)
 
-        print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n")
+        print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER AT PORT {}! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n".format(port2))
+
+        print("Running previous command: {}\n".format(cmd))
+
+        if 'create_account' in cmd:
+            res = create_account(stub1, cmd).response
+        elif 'log_in' in cmd:
+            res = login(stub1, cmd).response                      
+        elif 'show_accounts' in cmd:
+            res = show_accounts(stub1, cmd).response
+        elif 'send_message_to' in cmd:
+            res = send_message_to(stub1, cmd).response
+        elif 'delete_account' in cmd:
+            res = delete_account(stub1, cmd).response
+        elif 'quit' in cmd:
+            res = quit(stub1, cmd).response
+
+        print(res)
+
 
         while True:
             try:
-                message = stub.ReceiveMessage(chat_pb2.Request(request="temp"))
+                message = stub1.ReceiveMessage(chat_pb2.Request(request="temp"))
                 if (message and message.response):
                     print(message.response)
             except Exception:
@@ -130,47 +148,65 @@ def run():
                     if len(str.encode(cmd)) > 0:
                         if 'create_account' in cmd:
                             try:
-                                res = create_account(stub, cmd).response
+                                res = create_account(stub1, cmd).response
                             except Exception:
                                 break
                         elif 'log_in' in cmd:
                             try:
-                                res = login(stub, cmd).response
+                                res = login(stub1, cmd).response
                             except Exception:
                                 break                            
                         elif 'show_accounts' in cmd:
                             try:
-                                res = show_accounts(stub, cmd).response
+                                res = show_accounts(stub1, cmd).response
                             except Exception:
                                 break       
                         elif 'send_message_to' in cmd:
                             try:
-                                res = send_message_to(stub, cmd).response
+                                res = send_message_to(stub1, cmd).response
                             except Exception:
                                 break  
 
                         elif 'delete_account' in cmd:
                             try:
-                                res = delete_account(stub, cmd).response
+                                res = delete_account(stub1, cmd).response
                             except Exception:
                                 break  
 
                         elif 'quit' in cmd:
                             try:
-                                res = quit(stub, cmd).response
+                                res = quit(stub1, cmd).response
                             except Exception:
                                 break  
                     print(res)
 
     # connect to server host and port
     with grpc.insecure_channel(('{}:{}').format(server_ip_address, port3)) as channel:
-        stub = chat_pb2_grpc.ChatServiceStub(channel)
+        stub2 = chat_pb2_grpc.ChatServiceStub(channel)
 
-        print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n")
+        print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER AT PORT {}! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n".format(port3))
+
+        print("Running previous command: {} \n".format(cmd))
+
+        if 'create_account' in cmd:
+            res = create_account(stub2, cmd).response
+        elif 'log_in' in cmd:
+            res = login(stub2, cmd).response                      
+        elif 'show_accounts' in cmd:
+            res = show_accounts(stub2, cmd).response
+        elif 'send_message_to' in cmd:
+            res = send_message_to(stub2, cmd).response
+        elif 'delete_account' in cmd:
+            res = delete_account(stub2, cmd).response
+        elif 'quit' in cmd:
+            res = quit(stub2, cmd).response
+
+        print(res)
+
 
         while True:
             try:
-                message = stub.ReceiveMessage(chat_pb2.Request(request="temp"))
+                message = stub2.ReceiveMessage(chat_pb2.Request(request="temp"))
                 if (message and message.response):
                     print(message.response)
             except Exception:
@@ -193,17 +229,17 @@ def run():
                     # if there is a command prompt, send it and wait for a server response before printing it and continuing
                     if len(str.encode(cmd)) > 0:
                         if 'create_account' in cmd:
-                            res = create_account(stub, cmd).response
+                            res = create_account(stub2, cmd).response
                         elif 'log_in' in cmd:
-                            res = login(stub, cmd).response
+                            res = login(stub2, cmd).response
                         elif 'show_accounts' in cmd:
-                            res = show_accounts(stub, cmd).response
+                            res = show_accounts(stub2, cmd).response
                         elif 'send_message_to' in cmd:
-                            res = send_message_to(stub, cmd).response
+                            res = send_message_to(stub2, cmd).response
                         elif 'delete_account' in cmd:
-                            res = delete_account(stub, cmd).response
+                            res = delete_account(stub2, cmd).response
                         elif 'quit' in cmd:
-                            res = quit(stub, cmd).response
+                            res = quit(stub2, cmd).response
                     print(res)
 
 if __name__ == '__main__':

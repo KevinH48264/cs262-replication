@@ -166,6 +166,7 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
 
             # commiting log
             print("committing!")
+            save_accounts(self.accounts, self.port)
             save_queues(self.queues, self.port)
 
             # send to replicas before responding to client
@@ -250,7 +251,6 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
 
             # commiting log
             print("committing!")
-            save_accounts(self.accounts, self.port)
             save_queues(self.queues, self.port)
 
             # send to replicas before responding to client
@@ -261,8 +261,6 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
                     if ports_alive[ports.index(replica)]:
                         channel = grpc.insecure_channel(ip + ":" + str(replica))
                         stub = chat_pb2_grpc.ReplicationServiceStub(channel)
-                        account_update = chat_pb2.AccountUpdate(username=receiving_user, connection=context.peer())
-                        stub.UpdateAccount(account_update)
                         queue_update = chat_pb2.QueueUpdate(username=receiving_user, messages=self.queues[receiving_user])
                         stub.UpdateQueue(queue_update)
 
