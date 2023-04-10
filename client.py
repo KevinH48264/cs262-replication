@@ -49,10 +49,10 @@ def run():
 
             # TODO: uncomment this for Mac
             # listen to the socket or stdin for keyboard inputs.
-            # ready, _, _ = select.select([sys.stdin.fileno()], [], [], 0.1)
+            ready, _, _ = select.select([sys.stdin.fileno()], [], [], 0.1)
 
             # TODO: delete this for Mac
-            ready = [sys.stdin.fileno()]
+            #ready = [sys.stdin.fileno()]
 
 
             # once ready, check if the response is from a keyboard input (stdin) or server (socket connection)
@@ -104,24 +104,6 @@ def run():
 
         print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER AT PORT {}! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n".format(port2))
 
-        print("Running previous command: {}\n".format(cmd))
-
-        if 'create_account' in cmd:
-            res = create_account(stub1, cmd).response
-        elif 'log_in' in cmd:
-            res = login(stub1, cmd).response                      
-        elif 'show_accounts' in cmd:
-            res = show_accounts(stub1, cmd).response
-        elif 'send_message_to' in cmd:
-            res = send_message_to(stub1, cmd).response
-        elif 'delete_account' in cmd:
-            res = delete_account(stub1, cmd).response
-        elif 'quit' in cmd:
-            res = quit(stub1, cmd).response
-
-        #print(res)
-
-
         while True:
             try:
                 message = stub1.ReceiveMessage(chat_pb2.Request(request="temp"))
@@ -132,10 +114,10 @@ def run():
 
             # TODO: uncomment this for Mac
             # listen to the socket or stdin for keyboard inputs.
-            # ready, _, _ = select.select([sys.stdin.fileno()], [], [], 0.1)
+            ready, _, _ = select.select([sys.stdin.fileno()], [], [], 0.1)
 
             # TODO: delete this for Mac
-            ready = [sys.stdin.fileno()]
+            #ready = [sys.stdin.fileno()]
 
 
             # once ready, check if the response is from a keyboard input (stdin) or server (socket connection)
@@ -186,24 +168,6 @@ def run():
 
         print("YOU ARE SUCCESSFULLY CONNECTED TO THE SERVER AT PORT {}! Instructions here: 1. create_account [USERNAME] 2. show_accounts [USERNAME (optional)] 3. send_message_to [INSERT RECIPIENT] message: [INSERT MESSAGE] 5. delete_account [username] 6 (extra, logs you in): log_in [USERNAME] 7. (extra, logs you out): quit\n".format(port3))
 
-        print("Running previous command: {} \n".format(cmd))
-
-        if 'create_account' in cmd:
-            res = create_account(stub2, cmd).response
-        elif 'log_in' in cmd:
-            res = login(stub2, cmd).response                      
-        elif 'show_accounts' in cmd:
-            res = show_accounts(stub2, cmd).response
-        elif 'send_message_to' in cmd:
-            res = send_message_to(stub2, cmd).response
-        elif 'delete_account' in cmd:
-            res = delete_account(stub2, cmd).response
-        elif 'quit' in cmd:
-            res = quit(stub2, cmd).response
-
-        #print(res)
-
-
         while True:
             try:
                 message = stub2.ReceiveMessage(chat_pb2.Request(request="temp"))
@@ -214,10 +178,10 @@ def run():
 
             # TODO: uncomment this for Mac
             # listen to the socket or stdin for keyboard inputs.
-            # ready, _, _ = select.select([sys.stdin.fileno()], [], [], 0.1)
+            ready, _, _ = select.select([sys.stdin.fileno()], [], [], 0.1)
 
             # TODO: delete this for Mac
-            ready = [sys.stdin.fileno()]
+            #ready = [sys.stdin.fileno()]
 
 
             # once ready, check if the response is from a keyboard input (stdin) or server (socket connection)

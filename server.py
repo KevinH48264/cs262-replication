@@ -9,12 +9,14 @@ import csv
 import os
 import threading
 import time
+from multiprocessing import Lock
 
 # insert the server computer's IP address and port here. Ports reflect the 3 servers that are running for the backend. Lowest number will be the primary in case of leader election.
 #ip = "10.250.73.252"
 ip = "10.250.72.38"
 ports = [8080, 8081, 8082]
 ports_alive = [True, True, True]
+file_lock = Lock()
 
 class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
     def __init__(self, port):
@@ -75,7 +77,7 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
         if username in list(self.accounts.keys()):
             return chat_pb2.Response(response="This username already exists. If this is your account, please log in. If not, create an account with a different username.") 
         else:
-            self.accounts[username] = context.peer()
+            self.accounts[username] = None
             self.queues[username] = []
 
             # commiting log
@@ -91,7 +93,7 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
                     if ports_alive[ports.index(replica)]:
                         channel = grpc.insecure_channel(ip + ":" + str(replica))
                         stub = chat_pb2_grpc.ReplicationServiceStub(channel)
-                        account_update = chat_pb2.AccountUpdate(username=username, connection=context.peer())
+                        account_update = chat_pb2.AccountUpdate(username=username, connection=None)
                         stub.UpdateAccount(account_update)
                         queue_update = chat_pb2.QueueUpdate(username=username, messages=[])
                         stub.UpdateQueue(queue_update)
@@ -247,9 +249,6 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
             for i in range(len(messages)):
                 final_messages += messages[i] + "\n"
 
-            # Empty the queue after all messages have been sent
-            self.queues[receiving_user] = []
-
             # commiting log
             print("committing!")
             save_queues(self.queues, self.port)
@@ -265,6 +264,8 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
                         queue_update = chat_pb2.QueueUpdate(username=receiving_user, messages=self.queues[receiving_user])
                         stub.UpdateQueue(queue_update)
 
+            # Empty the queue after all messages have been sent
+            self.queues[receiving_user] = []
             return chat_pb2.Response(response=final_messages)
 
         else:
@@ -367,16 +368,18 @@ class ReplicationServicer(chat_pb2_grpc.ReplicationServiceServicer):
 
 # helper functions for both ChatServicer and ReplicationServicer
 def save_accounts(accounts, port):
-    with open(f'accounts-{port}.csv', mode='w') as outfile:
-        writer = csv.writer(outfile)
-        for key, value in accounts.items():
-            writer.writerow([key, value])
+    with file_lock:
+        with open(f'accounts-{port}.csv', mode='w') as outfile:
+            writer = csv.writer(outfile)
+            for key, value in accounts.items():
+                writer.writerow([key, value])
 
 def save_queues( queues, port):
-    with open(f'queues-{port}.csv', mode='w') as outfile:
-        writer = csv.writer(outfile)
-        for key, value in queues.items():
-            writer.writerow([key, '|'.join(value)])
+    with file_lock:
+        with open(f'queues-{port}.csv', mode='w') as outfile:
+            writer = csv.writer(outfile)
+            for key, value in queues.items():
+                writer.writerow([key, '|'.join(value)])
 
 
 # main function
