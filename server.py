@@ -214,7 +214,6 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
             return chat_pb2.Response(response="You are currently not logged in. Please log in first in order to delete your account.")
 
         self.accounts.pop(account_to_be_deleted)
-        self.queues.pop(account_to_be_deleted)
 
         # commiting log
         print("committing!")
@@ -282,7 +281,6 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
         # commiting log
         print("committing!")
         save_accounts(self.accounts, self.port)
-        save_queues(self.queues, self.port)
 
         # send to replicas before responding to client
         if self.primary:
@@ -294,8 +292,6 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
                     stub = chat_pb2_grpc.ReplicationServiceStub(channel)
                     account_update = chat_pb2.AccountUpdate(username=username, connection=None)
                     stub.UpdateAccount(account_update)
-                    queue_update = chat_pb2.QueueUpdate(username=username, messages=self.queues[username])
-                    stub.UpdateQueue(queue_update)
 
         return chat_pb2.Response(response="successfully quit / logged off")
     
