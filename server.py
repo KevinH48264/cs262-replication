@@ -176,7 +176,7 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
                     if ports_alive[ports.index(replica)]:
                         channel = grpc.insecure_channel(ip + ":" + str(replica))
                         stub = chat_pb2_grpc.ReplicationServiceStub(channel)
-                        queue_update = chat_pb2.QueueUpdate(username=recipient, messages=self.queues[username])
+                        queue_update = chat_pb2.QueueUpdate(username=recipient, messages=self.queues[recipient])
                         stub.UpdateQueue(queue_update)
 
             return chat_pb2.Response(response="message successfully sent to {}".format(recipient))
@@ -226,9 +226,9 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
                 if ports_alive[ports.index(replica)]:
                     channel = grpc.insecure_channel(ip + ":" + str(replica))
                     stub = chat_pb2_grpc.ReplicationServiceStub(channel)
-                    account_update = chat_pb2.AccountUpdate(username=username, connection=None)
+                    account_update = chat_pb2.AccountUpdate(username=account_to_be_deleted, connection=None)
                     stub.DeleteAccount(account_update)
-                    queue_update = chat_pb2.QueueUpdate(username=username, messages=[])
+                    queue_update = chat_pb2.QueueUpdate(username=account_to_be_deleted, messages=[])
                     stub.DeleteQueue(queue_update)
 
         return chat_pb2.Response(response="The account {} has been successfully deleted.".format(account_to_be_deleted))
@@ -292,9 +292,9 @@ class ChatServicer(chat_pb2_grpc.ChatServiceServicer):
                 if ports_alive[ports.index(replica)]:
                     channel = grpc.insecure_channel(ip + ":" + str(replica))
                     stub = chat_pb2_grpc.ReplicationServiceStub(channel)
-                    account_update = chat_pb2.AccountUpdate(username=receiving_user, connection=None)
+                    account_update = chat_pb2.AccountUpdate(username=username, connection=None)
                     stub.UpdateAccount(account_update)
-                    queue_update = chat_pb2.QueueUpdate(username=receiving_user, messages=self.queues[receiving_user])
+                    queue_update = chat_pb2.QueueUpdate(username=username, messages=self.queues[username])
                     stub.UpdateQueue(queue_update)
 
         return chat_pb2.Response(response="successfully quit / logged off")
